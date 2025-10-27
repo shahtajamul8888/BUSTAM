@@ -1,147 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BUSTAM – Premium Reminder App</title>
-  <link rel="icon" href="logo.png" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BUSTAM – Your Premium Reminder Assistant</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>">
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@700&display=swap" rel="stylesheet">
   <!-- Tailwind CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
   <script defer src="app.js"></script>
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    body {
+      font-family: 'Inter', 'Montserrat', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(120deg, #e0e7ff 0%, #f7f0fa 100%);
+    }
+    .brand-title { font-family: 'Montserrat', serif; }
+    .mascot { animation: bounce 2s infinite; }
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
+    }
+    .modal-fade { animation: modalin 0.4s cubic-bezier(.53,-0.3,.48,1.29); }
+    @keyframes modalin { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .bg-animate { animation: bgswap 12s infinite alternate; }
     @keyframes bgswap {
-      0%,100%{background:linear-gradient(120deg,#3b82f6,#06b6d4);}
-      20%{background:linear-gradient(120deg,#d946ef,#fde68a);}
-      40%{background:linear-gradient(120deg,#6366f1,#f472b6);}
-      70%{background:linear-gradient(120deg,#f47582,#34d399);}
-      90%{background:linear-gradient(120deg,#5eead4,#818cf8);}
+      0%,100%{background:linear-gradient(120deg,#e0e7ff,#f7f0fa);}
+      50%{background:linear-gradient(120deg,#fce7f3,#ddd6fe);}
     }
-    .modal-fade { animation: modalin 0.38s cubic-bezier(.53,-0.3,.48,1.29);}
-    @keyframes modalin{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
-    .glow-border:focus {box-shadow:0 0 9px #06b6d4,0 0 4px #6366f1;}
   </style>
 </head>
-<body class="bg-animate min-h-screen flex flex-col transition-all duration-1000 text-gray-900 dark:text-white overflow-x-hidden">
+<body class="bg-animate min-h-screen transition-all duration-1000 text-gray-900 dark:text-white">
 
-  <!-- 1. LOGO & BRANDING + HEADER -->
-  <header class="flex flex-col md:flex-row items-center justify-center gap-5 pt-7 pb-4">
-    <img src="logo.png" alt="BUSTAM Logo" class="h-14 w-14 rounded-xl shadow-lg animate-bounce" />
-    <div class="flex flex-col items-center text-center">
-      <h1 class="text-5xl md:text-6xl font-extrabold bg-gradient-to-tr from-blue-500 via-pink-400 to-teal-300 bg-clip-text text-transparent tracking-wider drop-shadow-lg select-none">BUSTAM</h1>
-      <span class="font-semibold mt-1 text-lg text-gray-800 dark:text-white">Your Premium Reminder App</span>
-    </div>
-  </header>
-
-  <!-- 2. NAVIGATION -->
-  <nav class="flex justify-center space-x-6 bg-white/40 dark:bg-slate-800 py-2 rounded-xl shadow-lg mb-2 mx-2 animate-fadeIn">
-    <a href="#" class="text-lg font-semibold hover:text-pink-400 transition">Home</a>
-    <a href="#reminders" class="text-lg font-semibold hover:text-cyan-400 transition">Reminders</a>
-    <a href="#account" class="text-lg font-semibold hover:text-indigo-400 transition">Account</a>
-    <a href="#" id="nav-logout" class="text-lg font-semibold hover:text-emerald-400">Logout</a>
-  </nav>
-
-  <!-- Digital clock and inspirational quote ("5. MODERN ELEMENTS" + "10. PREMIUM EXTRAS") -->
-  <div class="flex justify-center items-center gap-4 mt-1 mb-4">
-    <span class="font-mono px-4 py-2 rounded-lg bg-white/40 dark:bg-slate-700 text-cyan-500 text-xl shadow" id="clock"></span>
-    <span class="italic text-lg text-indigo-400">"The best way to get things done is to remind yourself to start."</span>
-  </div>
-
-  <!-- 6. AUTH SECTION WITH ANIMATION -->
-  <section id="auth-section" class="flex flex-col items-center my-6 transition-all">
-    <div class="bg-white/70 dark:bg-slate-700 rounded-2xl shadow-2xl p-8 w-full max-w-md animate-fadeIn">
-      <label for="whatsapp" class="block font-medium text-lg mb-2">Sign in with WhatsApp</label>
-      <input id="whatsapp" type="tel" placeholder="+91XXXXXXXXXX" 
-             class="glow-border w-full px-5 py-3 rounded-lg bg-white/80 dark:bg-slate-900/80 mb-4 text-lg focus:ring-2 ring-cyan-300 transition outline-none shadow" autocomplete="off">
-      <button id="send-otp" class="w-full py-3 text-lg bg-gradient-to-r from-cyan-400 to-violet-500 text-white rounded-lg font-bold shadow-xl hover:scale-105 hover:from-pink-400 hover:to-emerald-400 transition-all duration-300">Send OTP</button>
-      <div id="otp-area" class="mt-2 hidden">
-        <input id="otp-field" type="number" placeholder="Enter OTP"
-               class="glow-border w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-slate-900/80 focus:ring-2 ring-fuchsia-400 mt-3 outline-none text-lg">
-        <button id="verify-otp" class="w-full py-3 mt-4 bg-gradient-to-r from-indigo-400 to-pink-400 text-white rounded-lg font-bold shadow hover:scale-105 transition-all duration-300">Verify & Login</button>
+  <!-- LOGIN CARD -->
+  <div id="login-card" class="flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md mx-auto rounded-2xl shadow-xl bg-white/70 p-8 border border-gray-200 animate-fadeIn">
+      <div class="text-center mb-6">
+        <div class="mascot text-6xl mb-2">🤖</div>
+        <h1 class="text-4xl md:text-5xl font-extrabold brand-title text-purple-600 tracking-wide mb-2">BUSTAM</h1>
+        <span class="flex items-center justify-center gap-2 text-lg text-gray-700 font-medium mb-3">
+          <span>✨</span> Your Premium Reminder Assistant
+        </span>
       </div>
-      <div id="login-msg" class="text-center mt-3 text-lg font-semibold"></div>
-    </div>
-  </section>
-
-  <!-- MAIN APP -->
-  <main id="app-section" class="flex-1 flex flex-col items-center justify-start hidden">
-    <!-- 5. NEXT REMINDER CARD/DIGITAL CLOCK -->
-    <div class="flex justify-between w-full max-w-3xl mb-3 mt-5 gap-4 items-center">
-      <button id="theme-toggle" class="rounded-full text-2xl p-2 shadow bg-white/80 hover:bg-gray-200 dark:bg-slate-900 dark:text-yellow-300 transition">🌙</button>
-      <div id="next-reminder-card" class="hidden flex-1 mx-4 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-400 to-pink-400 text-white px-6 py-3 shadow-lg animate-fadeIn">
-        <div class="text-xs font-semibold opacity-70">Next Reminder:</div>
-        <div class="font-bold text-lg" id="next-rem-title"></div>
-        <div id="next-rem-time" class="font-mono"></div>
-        <div id="next-countdown" class="text-lg"></div>
-      </div>
-      <button id="logout" class="bg-gradient-to-tr from-pink-500 to-emerald-400 text-white rounded-lg px-6 py-2 font-semibold shadow-lg hover:scale-105 transition">Logout</button> 
-    </div>
-    
-    <!-- 4. FILTER/SEARCH/CATEGORIES -->
-    <div class="mb-2 flex gap-2 w-full max-w-3xl">
-      <input type="text" placeholder="Search reminders..." class="px-4 py-2 rounded-lg border flex-1" id="reminder-search" />
-      <select id="reminder-category" class="px-2 py-2 rounded bg-gray-200">
-        <option value="">All</option>
-        <option>Work</option>
-        <option>Personal</option>
-        <option>Urgent</option>
-      </select>
-    </div>
-
-    <div class="w-full max-w-3xl flex justify-between items-center mt-2 mb-2">
-      <h2 class="text-2xl font-bold text-cyan-200 dark:text-fuchsia-300 drop-shadow-lg">Upcoming Reminders</h2>
-      <button id="add-reminder-btn" aria-label="Add Reminder" class="p-5 rounded-full bg-gradient-to-r from-indigo-500 to-teal-400 shadow-xl text-white text-3xl font-extrabold animate-bounce ring-2 ring-offset-2 hover:scale-110 transition">+</button>
-    </div>
-    <!-- 4. REMINDERS/CARDS LIST -->
-    <section id="reminders-list" class="w-full max-w-3xl space-y-5 mb-24"></section>
-    <!-- 10. CALENDAR VIEW (plugin placeholder) -->
-    <div class="w-full max-w-3xl mb-8" id="calendar"></div>
-  </main>
-
-  <!-- MODAL (ACTIONABLE, ACCESSIBLE) -->
-  <div id="reminder-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div class="modal-fade bg-white dark:bg-slate-900 rounded-3xl p-7 max-w-xl w-full shadow-2xl relative border-2 border-cyan-400">
-      <button id="close-modal" aria-label="Close Modal" class="absolute top-2 right-4 text-3xl text-cyan-500 hover:scale-125 transition">&times;</button>
-      <h3 class="font-bold mb-6 text-indigo-600 dark:text-fuchsia-400 text-2xl">Add/Edit Reminder</h3>
-      <form id="reminder-form" class="flex flex-col gap-4">
-        <input id="rem-title" aria-label="Reminder Title" required type="text" maxlength="40" placeholder="Title"
-          class="glow-border px-5 py-3 rounded-lg bg-gray-100 dark:bg-slate-800 text-lg outline-none">
-        <textarea id="rem-desc" aria-label="Reminder Description" placeholder="Description" maxlength="100"
-          class="glow-border px-5 py-3 rounded-lg bg-gray-100 dark:bg-slate-800 text-base outline-none"></textarea>
-        <div class="flex gap-2">
-          <input id="rem-date" aria-label="Reminder Date" required type="date" class="glow-border px-4 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 outline-none flex-1">
-          <input id="rem-time" aria-label="Reminder Time" required type="time" class="glow-border px-4 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 outline-none flex-1">
-        </div>
-        <div class="flex gap-2 items-center">
-          <input id="rem-recurring" aria-label="Recurring Reminder" type="checkbox" class="accent-indigo-500 h-5 w-5">
-          <label for="rem-recurring" class="text-sm font-medium">Recurring daily</label>
-          <select id="rem-category" aria-label="Reminder Category" class="ml-3 px-1 py-1 rounded bg-gray-200">
-            <option>Work</option>
-            <option>Personal</option>
-            <option>Urgent</option>
-          </select>
-        </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-1">Welcome Back</h2>
+      <p class="text-gray-500 text-base mb-5">Enter your WhatsApp number to continue</p>
+      <form id="login-form">
+        <label for="wa" class="block text-gray-700 font-semibold mb-1">Phone Number</label>
+        <input id="wa" type="tel" placeholder="Enter your WhatsApp number"
+          class="w-full px-4 py-3 rounded-lg border border-gray-300 font-medium mb-5 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white" required>
         <button type="submit"
-          class="py-3 bg-gradient-to-r from-teal-400 to-indigo-500 text-white rounded-lg font-bold shadow hover:scale-105 hover:from-indigo-500 hover:to-pink-400 transition-all duration-300">Save</button>
+          class="w-full py-3 rounded-xl font-bold text-white text-lg bg-gradient-to-r from-purple-500 to-indigo-500 shadow-md hover:from-indigo-400 hover:to-purple-600 transition-all duration-300">
+          Send OTP 📱
+        </button>
+        <div id="otp-area" class="mt-5 hidden">
+          <input id="otp-field" type="number" placeholder="Enter OTP"
+                 class="w-full px-4 py-3 rounded-lg border mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
+          <button id="verify-otp"
+                  class="w-full py-2 mt-3 bg-gradient-to-r from-indigo-400 to-pink-400 text-white rounded-lg font-semibold shadow hover:from-pink-400 hover:to-indigo-400 transition-all">
+            Verify OTP ✅
+          </button>
+        </div>
+        <div id="login-msg" class="text-center mt-4 text-base font-semibold"></div>
       </form>
     </div>
   </div>
 
-  <!-- TOAST List & NOTIFICATIONS -->
-  <div id="toast-container" class="fixed top-7 right-5 z-50 space-y-3"></div>
+  <!-- MAIN APP DASHBOARD (Hidden until login) -->
+  <main id="app-section" class="hidden min-h-screen flex flex-col">
+    <!-- Header with mascot and navigation -->
+    <header class="bg-white/60 dark:bg-slate-800/60 shadow-lg rounded-b-2xl mx-2 mt-2 p-4">
+      <div class="flex items-center justify-between max-w-4xl mx-auto">
+        <div class="flex items-center gap-3">
+          <div class="mascot text-4xl">🤖</div>
+          <div>
+            <h1 class="text-2xl font-bold brand-title text-purple-600">BUSTAM</h1>
+            <p class="text-sm text-gray-600">Your Premium Reminder Assistant</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="clock" class="font-mono px-3 py-1 bg-purple-100 rounded-lg text-purple-600 font-semibold"></span>
+          <button id="theme-toggle" class="p-2 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-600 transition">🌙</button>
+          <button id="logout" class="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg font-semibold shadow hover:scale-105 transition">Logout 👋</button>
+        </div>
+      </div>
+    </header>
 
-  <!-- 9. FOOTER -->
-  <footer class="bg-gradient-to-r from-purple-800 via-pink-500 to-cyan-500 text-white py-4 flex justify-between items-center px-7 rounded-t-xl shadow-lg animate-fadeIn mt-10">
-    <span>Developed by Tajamul</span>
-    <span class="flex gap-3 items-center">
-      <a href="mailto:shahtajamul88@gmail.com" class="hover:underline">Contact</a>
-      <a href="https://github.com/yourusername/bustam" target="_blank"><img src="github.svg" alt="GitHub" class="w-6 h-6"/></a>
-      <a href="#"><img src="twitter.svg" alt="Twitter" class="w-6 h-6"/></a>
-    </span>
-    <marquee class="w-1/2 mx-4 font-bold tracking-wide text-lg">★ BUSTAM - The Premium Reminder App ★</marquee>
+    <!-- Next Reminder Card with cartoon -->
+    <div class="max-w-4xl mx-auto w-full px-4 mt-6">
+      <div id="next-reminder-card" class="hidden bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-white rounded-2xl p-6 shadow-xl animate-fadeIn">
+        <div class="flex items-center gap-4">
+          <div class="text-5xl">⏰</div>
+          <div class="flex-1">
+            <div class="text-sm opacity-80">Next Reminder:</div>
+            <div class="font-bold text-xl" id="next-rem-title"></div>
+            <div class="font-mono text-lg" id="next-rem-time"></div>
+            <div class="text-lg font-semibold" id="next-countdown"></div>
+          </div>
+          <div class="text-4xl animate-bounce">🔔</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="max-w-4xl mx-auto w-full px-4 mt-6">
+      <div class="bg-white/60 dark:bg-slate-800/60 rounded-2xl p-4 shadow-lg">
+        <div class="flex gap-3 items-center">
+          <div class="text-2xl">🔍</div>
+          <input type="text" placeholder="Search your reminders..." class="flex-1 px-4 py-2 rounded-lg border focus:ring-2 focus:ring-purple-400 outline-none" id="reminder-search">
+          <select id="reminder-category" class="px-3 py-2 rounded-lg border focus:ring-2 focus:ring-purple-400">
+            <option value="">All Categories</option>
+            <option value="Work">💼 Work</option>
+            <option value="Personal">🏠 Personal</option>
+            <option value="Urgent">🚨 Urgent</option>
+            <option value="Health">🏥 Health</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reminders Section -->
+    <div class="max-w-4xl mx-auto w-full px-4 mt-6 flex-1">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-purple-600 flex items-center gap-2">
+          <span>📝</span> Your Reminders
+        </h2>
+        <button id="add-reminder-btn" class="p-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-2xl shadow-xl hover:scale-110 transition animate-bounce">
+          ➕
+        </button>
+      </div>
+      
+      <!-- Reminders List -->
+      <div id="reminders-list" class="space-y-4 mb-20"></div>
+      
+      <!-- Empty State with cartoon -->
+      <div id="empty-state" class="hidden text-center py-12">
+        <div class="text-8xl mb-4">😴</div>
+        <h3 class="text-2xl font-bold text-gray-600 mb-2">No Reminders Yet!</h3>
+        <p class="text-gray-500">Add your first reminder to get started</p>
+      </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button id="fab" class="fixed bottom-8 right-8 p-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-3xl shadow-2xl hover:scale-110 transition z-40">
+      ➕
+    </button>
+  </main>
+
+  <!-- REMINDER MODAL -->
+  <div id="reminder-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <div class="modal-fade bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-md w-full shadow-2xl border-4 border-purple-300">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">📝</span>
+          <h3 class="font-bold text-2xl text-purple-600">Add Reminder</h3>
+        </div>
+        <button id="close-modal" class="text-3xl text-purple-500 hover:scale-125 transition">❌</button>
+      </div>
+      
+      <form id="reminder-form" class="space-y-4">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1 flex items-center gap-2">
+            <span>📌</span> Title
+          </label>
+          <input id="rem-title" required type="text" maxlength="50" placeholder="What do you need to remember?"
+            class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-purple-400 outline-none">
+        </div>
+        
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1 flex items-center gap-2">
+            <span>📄</span> Description
+          </label>
+          <textarea id="rem-desc" placeholder="Add more details..." maxlength="100"
+            class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-purple-400 outline-none h-20"></textarea>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1 flex items-center gap-2">
+              <span>📅</span> Date
+            </label>
+            <input id="rem-date" required type="date" class="w-full px-3 py-2 rounded-lg border focus:ring-2 focus:ring-purple-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1 flex items-center gap-2">
+              <span>⏰</span> Time
+            </label>
+            <input id="rem-time" required type="time" class="w-full px-3 py-2 rounded-lg border focus:ring-2 focus:ring-purple-400 outline-none">
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1 flex items-center gap-2">
+            <span>🏷️</span> Category
+          </label>
+          <select id="rem-category" class="w-full px-3 py-2 rounded-lg border focus:ring-2 focus:ring-purple-400">
+            <option value="Personal">🏠 Personal</option>
+            <option value="Work">💼 Work</option>
+            <option value="Urgent">🚨 Urgent</option>
+            <option value="Health">🏥 Health</option>
+          </select>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <input id="rem-recurring" type="checkbox" class="w-5 h-5 accent-purple-500">
+          <label for="rem-recurring" class="text-gray-700 font-medium flex items-center gap-2">
+            <span>🔄</span> Repeat daily
+          </label>
+        </div>
+        
+        <button type="submit"
+          class="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-lg shadow-lg hover:scale-105 transition-all">
+          Save Reminder 💾
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-6 right-6 z-50 space-y-3"></div>
+
+  <!-- Footer -->
+  <footer class="bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-500 text-white py-4 text-center font-semibold">
+    <div class="flex items-center justify-center gap-2">
+      <span>🚀</span>
+      <span>Developed by Tajamul</span>
+      <span>⭐</span>
+    </div>
   </footer>
 </body>
 </html>
