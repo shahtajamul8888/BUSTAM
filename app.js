@@ -1,273 +1,386 @@
-// THEME: Light/Dark
+// Theme Toggle
 const themeToggle = document.getElementById('theme-toggle');
-if (localStorage.getItem('bustam_theme') === "dark") dark(true);
-themeToggle.onclick = () => dark();
-function dark(force = false) {
-  document.body.classList.toggle('dark', force ? true : undefined);
-  themeToggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-  localStorage.setItem('bustam_theme', document.body.classList.contains('dark') ? "dark" : "light");
+let isDark = localStorage.getItem('bustam_theme') === 'dark';
+if (isDark) document.body.classList.add('dark');
+updateThemeIcon();
+
+themeToggle.onclick = () => {
+  isDark = !isDark;
+  document.body.classList.toggle('dark');
+  localStorage.setItem('bustam_theme', isDark ? 'dark' : 'light');
+  updateThemeIcon();
+};
+
+function updateThemeIcon() {
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
 }
 
-// DIGITAL CLOCK & COUNTDOWN
-function clock() {
+// Digital Clock
+function updateClock() {
   const now = new Date();
-  document.getElementById("clock").textContent = now.toLocaleTimeString("en-IN", { hour12: false });
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-IN', { hour12: false });
 }
-setInterval(clock, 1000); clock();
+setInterval(updateClock, 1000);
+updateClock();
 
-// AUTH (OTP Simulated)
-const authSection = document.getElementById('auth-section');
+// Login System (Simulated OTP)
+const loginCard = document.getElementById('login-card');
 const appSection = document.getElementById('app-section');
-const sendOtpBtn = document.getElementById('send-otp');
+const loginForm = document.getElementById('login-form');
 const otpArea = document.getElementById('otp-area');
 const loginMsg = document.getElementById('login-msg');
 let sentOTP = null;
-sendOtpBtn.onclick = function () {
-  const num = document.getElementById('whatsapp').value.trim();
+
+loginForm.onsubmit = function(e) {
+  e.preventDefault();
+  const num = document.getElementById('wa').value.trim();
   if (!/^(\+91)?[0-9]{10}$/.test(num.replace('+91', ''))) {
-    loginMsg.textContent = "Enter a valid 10-digit WhatsApp number";
-    loginMsg.className = "text-pink-500 text-center mt-3 font-semibold";
-    otpArea.classList.add('hidden');
+    showLoginMessage("Please enter a valid 10-digit WhatsApp number 📱", "error");
     return;
   }
+  
   sentOTP = Math.floor(100000 + Math.random() * 900000).toString();
   otpArea.classList.remove('hidden');
-  loginMsg.textContent = "OTP sent (simulated: " + sentOTP + ")";
-  loginMsg.className = "text-green-500 text-center mt-3 font-semibold";
-  // For PRODUCTION: integrate WhatsApp OTP API here!
+  showLoginMessage(`OTP sent! (Demo: ${sentOTP}) 📨`, "success");
 };
-document.getElementById('verify-otp').onclick = (e) => {
+
+document.getElementById('verify-otp').onclick = function(e) {
+  e.preventDefault();
   const enteredOTP = document.getElementById('otp-field').value;
   if (enteredOTP === sentOTP) {
-    loginMsg.textContent = "Login Success!";
-    loginMsg.className = "text-green-500 text-center mt-3 font-semibold";
+    showLoginMessage("Login Success! Welcome to BUSTAM! 🎉", "success");
     setTimeout(() => {
-      authSection.style.display = "none";
+      loginCard.classList.add('hidden');
       appSection.classList.remove('hidden');
       loadReminders();
       showNextReminder();
-    }, 600);
+    }, 1500);
   } else {
-    loginMsg.textContent = "Incorrect OTP";
-    loginMsg.className = "text-pink-500 text-center mt-3 font-semibold";
+    showLoginMessage("Incorrect OTP. Try again! ❌", "error");
   }
 };
+
+function showLoginMessage(msg, type) {
+  loginMsg.textContent = msg;
+  loginMsg.className = `text-center mt-4 font-semibold ${type === 'error' ? 'text-red-500' : 'text-green-500'}`;
+}
+
+// Logout
 document.getElementById('logout').onclick = () => {
   appSection.classList.add('hidden');
-  authSection.style.display = "flex";
-  document.getElementById('whatsapp').value = "";
+  loginCard.classList.remove('hidden');
+  document.getElementById('wa').value = '';
   otpArea.classList.add('hidden');
-  loginMsg.textContent = "";
+  loginMsg.textContent = '';
+  toast("Logged out successfully! 👋", "info");
 };
-document.getElementById('nav-logout').onclick = () => { document.getElementById('logout').click(); };
 
-// REMINDER STORAGE
-const REM_KEY = "bustam_reminders";
-function getReminders() { return JSON.parse(localStorage.getItem(REM_KEY) || '[]'); }
-function setReminders(arr) { localStorage.setItem(REM_KEY, JSON.stringify(arr)); }
-function filterReminders(query, cat) {
-  return getReminders().filter(r => 
-    (!query || (r.title?.toLowerCase().includes(query) || r.desc?.toLowerCase().includes(query)))
-    && (!cat || r.category === cat || cat === "")
-  );
+// Reminder Storage
+const STORAGE_KEY = 'bustam_reminders';
+function getReminders() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 }
+function saveReminders(reminders) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
+}
+
+// Load and Display Reminders
 function loadReminders() {
   const list = document.getElementById('reminders-list');
-  let searchQuery = document.getElementById("reminder-search").value.trim().toLowerCase();
-  let searchCat = document.getElementById("reminder-category").value;
-  let reminders = filterReminders(searchQuery, searchCat);
+  const emptyState = document.getElementById('empty-state');
+  const searchQuery = document.getElementById('reminder-search').value.toLowerCase();
+  const categoryFilter = document.getElementById('reminder-category').value;
+  
+  let reminders = getReminders().filter(rem => {
+    const matchesSearch = !searchQuery || 
+      rem.title.toLowerCase().includes(searchQuery) || 
+      rem.desc.toLowerCase().includes(searchQuery);
+    const matchesCategory = !categoryFilter || rem.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+  
   reminders.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
   
-  list.innerHTML = "";
-  if (!reminders.length) {
-    list.innerHTML = '<div class="text-center text-gray-300 py-12 animate-fadeIn">No reminders yet. Add yours!</div>';
-    document.getElementById("next-reminder-card").classList.add("hidden");
+  if (reminders.length === 0) {
+    list.innerHTML = '';
+    emptyState.classList.remove('hidden');
     return;
   }
-  reminders.forEach((rem, i) => {
-    let due = new Date(rem.date + 'T' + rem.time), now = new Date();
-    let overdue = due < now && !rem.completed;
-    let next = overdue ? "❗Overdue" : rem.completed ? "✅" : "";
-    let recurringText = rem.recurring ? `<span class="ml-1 px-2 rounded bg-cyan-100 dark:bg-fuchsia-700 text-cyan-500 dark:text-white text-xs">Recurring</span>` : '';
-    let category = rem.category ? `<span class="ml-2 px-2 rounded bg-pink-200 text-pink-700 text-xs">${rem.category}</span>` : '';
-    list.innerHTML += `
-    <div class="card bg-gradient-to-tr from-white via-cyan-50 to-fuchsia-50 dark:from-slate-900 p-5 rounded-xl shadow-lg flex justify-between items-center 
-      hover:scale-105 transition animate-fadeIn border-l-8 ${overdue ? 'border-pink-600' : 'border-cyan-400'}">
-      <div>
-        <span class="font-bold text-lg flex items-center">
-          ${rem.completed ? "✅" : overdue ? "⏰" : "🔔"}
-          <span class="ml-2">${rem.title || '(No Title)'}</span>
-          ${recurringText}${category}
-        </span>
-        <p class="text-gray-700 dark:text-gray-200 text-sm mt-1">${rem.desc}</p>
-        <span class="text-xs text-gray-400">${rem.date} @ ${rem.time}<span> ${next}</span></span>
+  
+  emptyState.classList.add('hidden');
+  list.innerHTML = '';
+  
+  reminders.forEach((rem, index) => {
+    const dueDate = new Date(rem.date + 'T' + rem.time);
+    const now = new Date();
+    const isOverdue = dueDate < now && !rem.completed;
+    const categoryEmojis = {
+      'Work': '💼',
+      'Personal': '🏠',
+      'Urgent': '🚨',
+      'Health': '🏥'
+    };
+    
+    const card = document.createElement('div');
+    card.className = `bg-white/70 dark:bg-slate-800/70 rounded-2xl p-5 shadow-lg border-l-4 hover:scale-105 transition-all ${
+      isOverdue ? 'border-red-400' : rem.completed ? 'border-green-400' : 'border-purple-400'
+    }`;
+    
+    card.innerHTML = `
+      <div class="flex items-center justify-between">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-2xl">${rem.completed ? '✅' : isOverdue ? '⏰' : categoryEmojis[rem.category] || '📝'}</span>
+            <h3 class="font-bold text-lg text-gray-800 dark:text-white">${rem.title}</h3>
+            ${rem.recurring ? '<span class="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-xs">🔄 Recurring</span>' : ''}
+          </div>
+          ${rem.desc ? `<p class="text-gray-600 dark:text-gray-300 mb-2">${rem.desc}</p>` : ''}
+          <div class="flex items-center gap-4 text-sm text-gray-500">
+            <span>📅 ${rem.date}</span>
+            <span>⏰ ${rem.time}</span>
+            <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">${categoryEmojis[rem.category]} ${rem.category}</span>
+            ${isOverdue ? '<span class="text-red-500 font-semibold">⚠️ Overdue</span>' : ''}
+          </div>
+        </div>
+        <div class="flex gap-2 ml-4">
+          <button onclick="editReminder(${index})" class="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 transition">
+            ✏️
+          </button>
+          <button onclick="toggleComplete(${index})" class="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition">
+            ${rem.completed ? '↩️' : '✅'}
+          </button>
+          <button onclick="deleteReminder(${index})" class="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition">
+            🗑️
+          </button>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <button class="edit px-2 py-1 rounded bg-indigo-400 hover:bg-indigo-600 text-white shadow" data-i="${i}" aria-label="Edit">✏️</button>
-        <button class="del px-2 py-1 rounded bg-pink-400 hover:bg-pink-600 text-white shadow" data-i="${i}" aria-label="Delete">🗑️</button>
-        <button class="done px-2 py-1 rounded bg-gradient-to-r from-emerald-400 to-teal-400 text-white shadow hover:scale-110" data-i="${i}" aria-label="Mark as done">${rem.completed ? '⏪' : '✅'}</button>
-      </div>
-    </div>
     `;
+    
+    list.appendChild(card);
   });
-  setTimeout(() => list.querySelectorAll(".animate-fadeIn").forEach(div => div.classList.remove("animate-fadeIn")), 800);
-  list.querySelectorAll('.edit').forEach(btn => btn.onclick = () => openModal(btn.dataset.i));
-  list.querySelectorAll('.del').forEach(btn => btn.onclick = () => { removeReminder(btn.dataset.i); });
-  list.querySelectorAll('.done').forEach(btn => btn.onclick = () => { toggleReminderCompleted(btn.dataset.i); });
+  
   showNextReminder();
 }
 
-// FILTER EVENTS
-document.getElementById("reminder-search").oninput = loadReminders;
-document.getElementById("reminder-category").onchange = loadReminders;
+// Search and Filter Event Listeners
+document.getElementById('reminder-search').oninput = loadReminders;
+document.getElementById('reminder-category').onchange = loadReminders;
 
-// REAL-TIME NEXT REMINDER DISPLAY & COUNTDOWN
+// Next Reminder Display
 function showNextReminder() {
   const nextCard = document.getElementById('next-reminder-card');
-  let now = new Date();
-  let reminders = getReminders()
-    .filter(r => !r.completed)
-    .filter(r => new Date(r.date + 'T' + r.time) > now)
+  const now = new Date();
+  const upcomingReminders = getReminders()
+    .filter(rem => !rem.completed && new Date(rem.date + 'T' + rem.time) > now)
     .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
-  if (reminders.length) {
+  
+  if (upcomingReminders.length > 0) {
+    const nextRem = upcomingReminders[0];
+    document.getElementById('next-rem-title').textContent = nextRem.title;
+    document.getElementById('next-rem-time').textContent = `${nextRem.date} at ${nextRem.time}`;
     nextCard.classList.remove('hidden');
-    document.getElementById('next-rem-title').textContent = reminders[0].title;
-    document.getElementById('next-rem-time').textContent = reminders[0].date + " @ " + reminders[0].time;
-    countdownToNextReminder(reminders[0]);
+    startCountdown(nextRem);
   } else {
     nextCard.classList.add('hidden');
-    document.getElementById('next-countdown').textContent = '';
   }
 }
-function countdownToNextReminder(rem) {
-  let interval = setInterval(() => {
-    let now = new Date(), due = new Date(rem.date + 'T' + rem.time);
-    let diff = due - now;
+
+function startCountdown(reminder) {
+  const countdownEl = document.getElementById('next-countdown');
+  const interval = setInterval(() => {
+    const now = new Date();
+    const due = new Date(reminder.date + 'T' + reminder.time);
+    const diff = due - now;
+    
     if (diff <= 0) {
       clearInterval(interval);
-      document.getElementById('next-countdown').textContent = '';
+      countdownEl.textContent = '';
       showNextReminder();
       return;
     }
-    let hrs = Math.floor(diff / 3600000);
-    let min = Math.floor((diff % 3600000) / 60000);
-    let sec = Math.floor((diff % 60000) / 1000);
-    document.getElementById('next-countdown').textContent =
-      `⏳ In ${hrs}h ${min}m ${sec}s`;
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    countdownEl.textContent = `⏳ ${hours}h ${minutes}m ${seconds}s remaining`;
   }, 1000);
 }
 
-// MODAL + FORM
+// Modal System
 const modal = document.getElementById('reminder-modal');
-document.getElementById('add-reminder-btn').onclick = () => openModal();
-document.getElementById('close-modal').onclick = () => closeModal();
-modal.onclick = e => { if (e.target === modal) closeModal(); };
 const reminderForm = document.getElementById('reminder-form');
-let editIndex = null;
-function openModal(idx = null) {
-  modal.classList.remove('hidden'); editIndex = idx;
-  if (idx !== null) {
-    let rem = getReminders()[idx];
+let editingIndex = null;
+
+document.getElementById('add-reminder-btn').onclick = () => openModal();
+document.getElementById('fab').onclick = () => openModal();
+document.getElementById('close-modal').onclick = () => closeModal();
+modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+function openModal(index = null) {
+  editingIndex = index;
+  modal.classList.remove('hidden');
+  
+  if (index !== null) {
+    const rem = getReminders()[index];
     document.getElementById('rem-title').value = rem.title;
-    document.getElementById('rem-desc').value = rem.desc;
+    document.getElementById('rem-desc').value = rem.desc || '';
     document.getElementById('rem-date').value = rem.date;
     document.getElementById('rem-time').value = rem.time;
-    document.getElementById('rem-recurring').checked = rem.recurring;
-    document.getElementById('rem-category').value = rem.category || "";
+    document.getElementById('rem-category').value = rem.category;
+    document.getElementById('rem-recurring').checked = rem.recurring || false;
   } else {
     reminderForm.reset();
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('rem-date').value = today;
   }
 }
-function closeModal() { modal.classList.add('hidden'); }
-reminderForm.onsubmit = function (e) {
-  e.preventDefault(); let reminders = getReminders();
-  const rem = {
-    title: document.getElementById('rem-title').value,
-    desc: document.getElementById('rem-desc').value,
+
+function closeModal() {
+  modal.classList.add('hidden');
+  editingIndex = null;
+}
+
+reminderForm.onsubmit = function(e) {
+  e.preventDefault();
+  
+  const reminder = {
+    title: document.getElementById('rem-title').value.trim(),
+    desc: document.getElementById('rem-desc').value.trim(),
     date: document.getElementById('rem-date').value,
     time: document.getElementById('rem-time').value,
+    category: document.getElementById('rem-category').value,
     recurring: document.getElementById('rem-recurring').checked,
     completed: false,
-    category: document.getElementById('rem-category').value,
+    createdAt: new Date().toISOString()
   };
-  if (editIndex !== null) reminders[editIndex] = { ...rem, completed: reminders[editIndex].completed };
-  else reminders.push(rem);
-  setReminders(reminders);
-  closeModal(); loadReminders(); toast("Reminder saved!", "success");
+  
+  let reminders = getReminders();
+  
+  if (editingIndex !== null) {
+    reminders[editingIndex] = { ...reminders[editingIndex], ...reminder };
+    toast("Reminder updated successfully! ✏️", "success");
+  } else {
+    reminders.push(reminder);
+    toast("Reminder added successfully! 🎉", "success");
+  }
+  
+  saveReminders(reminders);
+  closeModal();
+  loadReminders();
 };
 
-// REMOVE/COMPLETE
-function removeReminder(i) {
-  let reminders = getReminders(); reminders.splice(i, 1);
-  setReminders(reminders); loadReminders(); toast("Reminder deleted.", "info");
+// Reminder Actions
+function editReminder(index) {
+  openModal(index);
 }
-function toggleReminderCompleted(i) {
+
+function toggleComplete(index) {
   let reminders = getReminders();
-  reminders[i].completed = !reminders[i].completed;
-  if (reminders[i].completed && reminders[i].recurring) {
-    const d = new Date(reminders[i].date + "T" + reminders[i].time);
-    d.setDate(d.getDate() + 1);
-    reminders[i].date = d.toISOString().substring(0, 10);
-    reminders[i].completed = false;
+  reminders[index].completed = !reminders[index].completed;
+  
+  if (reminders[index].completed && reminders[index].recurring) {
+    // Create next occurrence for recurring reminders
+    const nextDate = new Date(reminders[index].date + 'T' + reminders[index].time);
+    nextDate.setDate(nextDate.getDate() + 1);
+    reminders[index].date = nextDate.toISOString().split('T')[0];
+    reminders[index].completed = false;
+    toast("Recurring reminder scheduled for tomorrow! 🔄", "info");
+  } else {
+    toast(reminders[index].completed ? "Reminder completed! ✅" : "Reminder reactivated! ↩️", "success");
   }
-  setReminders(reminders); loadReminders();
-  toast(reminders[i].completed ? "Marked as done!" : "Reactivated.", "success");
+  
+  saveReminders(reminders);
+  loadReminders();
 }
-document.body.onkeydown = (e) => { if (e.key === "Escape") closeModal(); };
 
-// TOAST/NOTIFY
-function toast(msg, type = "info") {
-  const toastDiv = document.createElement('div');
-  let colors = { success: 'from-teal-400 to-fuchsia-400', info: 'from-indigo-400 to-pink-400', warn: 'from-amber-400 to-pink-500' },
-    color = colors[type] || colors.info;
-  toastDiv.className = `rounded-2xl px-6 py-4 text-lg font-semibold text-white bg-gradient-to-tr ${color} shadow-xl animate-fadeIn`;
-  toastDiv.innerHTML = msg;
-  document.getElementById('toast-container').appendChild(toastDiv);
-  setTimeout(() => toastDiv.remove(), 2400);
-}
-// Browser Notifications (optional, notifies if permission granted)
-if ("Notification" in window) Notification.requestPermission();
-function notify(title, body) {
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification(title, { body });
+function deleteReminder(index) {
+  if (confirm("Are you sure you want to delete this reminder? 🗑️")) {
+    let reminders = getReminders();
+    reminders.splice(index, 1);
+    saveReminders(reminders);
+    loadReminders();
+    toast("Reminder deleted! 🗑️", "info");
   }
 }
 
-// REAL-TIME NOTIFICATIONS
+// Toast Notifications
+function toast(message, type = "info") {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  
+  const colors = {
+    success: 'from-green-400 to-emerald-500',
+    error: 'from-red-400 to-pink-500',
+    info: 'from-blue-400 to-purple-500',
+    warning: 'from-yellow-400 to-orange-500'
+  };
+  
+  toast.className = `bg-gradient-to-r ${colors[type] || colors.info} text-white px-6 py-4 rounded-2xl shadow-xl font-semibold transform transition-all duration-300 opacity-0 translate-x-full`;
+  toast.textContent = message;
+  
+  container.appendChild(toast);
+  
+  // Animate in
+  setTimeout(() => {
+    toast.classList.remove('opacity-0', 'translate-x-full');
+  }, 100);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.add('opacity-0', 'translate-x-full');
+    setTimeout(() => container.removeChild(toast), 300);
+  }, 3000);
+}
+
+// Real-time Reminder Notifications
 setInterval(() => {
-  let reminders = getReminders(), now = new Date();
-  reminders.forEach((rem, i) => {
+  const now = new Date();
+  const reminders = getReminders();
+  
+  reminders.forEach((rem, index) => {
     if (!rem.completed) {
-      let remDate = new Date(rem.date + 'T' + rem.time);
-      if (Math.abs(now - remDate) < 10000 && now >= remDate) {
-        toast(`⏰ <b>${rem.title}</b><br>${rem.desc || ""} <br>${rem.date} ${rem.time}`, "warn");
-        notify("BUSTAM Reminder", `${rem.title} @${rem.time} - ${rem.desc}`);
-        toggleReminderCompleted(i); showNextReminder();
+      const dueDate = new Date(rem.date + 'T' + rem.time);
+      const timeDiff = Math.abs(now - dueDate);
+      
+      // Notify if reminder is due (within 1 minute)
+      if (timeDiff < 60000 && dueDate <= now) {
+        toast(`⏰ REMINDER: ${rem.title}! 🔔`, "warning");
+        
+        // Browser notification if permission granted
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("BUSTAM Reminder", {
+            body: `${rem.title} - ${rem.desc}`,
+            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>"
+          });
+        }
+        
+        // Auto-complete the reminder
+        toggleComplete(index);
       }
     }
   });
-}, 10000);
+}, 60000); // Check every minute
 
-// CALENDAR PLUGIN (shows dates only, can be replaced with fullcalendar.io)
-function calendarPreview() {
-  const calDiv = document.getElementById("calendar");
-  let rems = getReminders();
-  if (!rems.length) { calDiv.innerHTML = ""; return; }
-  let today = new Date(), tmp = {};
-  rems.forEach(rem => {
-    if (!tmp[rem.date]) tmp[rem.date] = [];
-    tmp[rem.date].push(rem.title);
-  });
-  let markup = `<div class="bg-white/70 dark:bg-slate-800 rounded-xl shadow p-5">
-  <div class="font-bold mb-2 text-cyan-600 dark:text-cyan-300">Reminder Dates</div><div class="flex flex-wrap gap-2">`;
-  Object.keys(tmp).sort().forEach(date => {
-    const d = new Date(date);
-    const day = d.toLocaleDateString('en-IN', { weekday: "short", month: "short", day: "numeric" });
-    markup += `<span class="px-3 py-1 rounded-full bg-fuchsia-200 dark:bg-fuchsia-700 text-blue-900 dark:text-white text-sm">${day} (${tmp[date].length})</span>`;
-  });
-  calDiv.innerHTML = markup + "</div></div>";
+// Request notification permission
+if ("Notification" in window && Notification.permission === "default") {
+  Notification.requestPermission();
 }
-setInterval(calendarPreview, 5000); // Update calendar preview
 
-// INIT
-calendarPreview();
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+  if (e.ctrlKey && e.key === 'n') {
+    e.preventDefault();
+    openModal();
+  }
+});
+
+// Initialize app
+if (appSection.classList.contains('hidden')) {
+  // Show login by default
+} else {
+  loadReminders();
+  showNextReminder();
+}
